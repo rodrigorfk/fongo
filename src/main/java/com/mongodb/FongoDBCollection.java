@@ -70,10 +70,13 @@ public class FongoDBCollection extends DBCollection {
     return result;
   }
 
-  private CommandResult updateResult(int updateCount, boolean updatedExisting) {
+  private CommandResult updateResult(int updateCount, boolean updatedExisting, Object upserted) {
     CommandResult result = fongoDb.okResult();
     result.put("n", updateCount);
     result.put("updatedExisting", updatedExisting);
+    if(upserted != null){
+        result.put("upserted", upserted);
+    }
     return result;
   }
 
@@ -196,6 +199,7 @@ public class FongoDBCollection extends DBCollection {
     int updatedDocuments = 0;
     boolean idOnlyUpdate = q.containsField(ID_KEY) && q.keySet().size() == 1;
     boolean updatedExisting = false;
+    Object upserted = null;
 
     if (idOnlyUpdate && isNotUpdateCommand(o)) {
       if (!o.containsField(ID_KEY)) {
@@ -226,9 +230,10 @@ public class FongoDBCollection extends DBCollection {
       if (updatedDocuments == 0 && upsert) {
         BasicDBObject newObject = createUpsertObject(q);
         fInsert(updateEngine.doUpdate(newObject, o, q), concern);
+        upserted = newObject.get("_id");
       }
     }
-    return new WriteResult(updateResult(updatedDocuments, updatedExisting), concern);
+    return new WriteResult(updateResult(updatedDocuments, updatedExisting, upserted), concern);
   }
 
 
@@ -314,7 +319,7 @@ public class FongoDBCollection extends DBCollection {
       removeFromIndexes(object);
       updatedDocuments++;
     }
-    return new WriteResult(updateResult(updatedDocuments, false), concern);
+    return new WriteResult(updateResult(updatedDocuments, false, null), concern);
   }
 
   @Override
