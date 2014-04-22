@@ -7,17 +7,20 @@ import com.mongodb.DBObject;
 import com.mongodb.FongoDB;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.util.JSON;
+import com.mongodb.util.CustomJSONSerializers;
 
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.RhinoException;
+import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Scriptable;
 
 /**
@@ -173,6 +176,8 @@ public class MapReduce {
       }
 
       DBObject result = outmode.createResult(coll);
+      String json = JSON.serialize(result);
+        result = (DBObject) JSON.parse(json);
       LOG.debug("computeResult() : {}", result);
       return result;
     } finally {
@@ -188,6 +193,16 @@ public class MapReduce {
       Object value = NativeObject.getProperty(no, key);
       if (value instanceof NativeObject) {
         ret.put(key, getObject((NativeObject) value));
+      } else if (value instanceof NativeArray) {
+          BasicDBList list = new BasicDBList();
+          NativeArray outs = (NativeArray) value;
+          for (int i = 0; i < outs.getLength(); i++) {
+              NativeObject valueList = (NativeObject) outs.get(i, outs);
+              list.add(getObject(valueList));
+          }
+          ret.put(key, list);
+      } else if(value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeDate")){
+            ret.put(key, new Date((long)ScriptRuntime.toNumber(value)));
       } else {
         ret.put(key, value);
       }
@@ -205,18 +220,27 @@ public class MapReduce {
     addMongoFunctions(sb);
 
     // Create variables for exporting.
-    sb.append("var $$$fongoEmits$$$ = new Object();\n");
-    sb.append("function emit(param1, param2) { if(typeof $$$fongoEmits$$$[param1] === 'undefined') { " +
-        "$$$fongoEmits$$$[param1] = new Array();" +
+    sb.append("var $$$ObjectReference$$$ = new Array(); \n");
+    sb.append("var $$$fongoEmits$$$ = new Object(); \n");
+    sb.append("function emit(param1, param2) { \n" +
+        "var index = $$$ObjectReference$$$.indexOf(param1);\n" +
+        "if(index === -1) { " +
+        "   $$$ObjectReference$$$.push(param1);" +
+        "   index = $$$ObjectReference$$$.indexOf(param1);" +
         "}\n" +
-        "$$$fongoEmits$$$[param1][$$$fongoEmits$$$[param1].length] = param2;\n" +
+        "var $$$key = 'ObjectReference.' + $$$ObjectReference$$$.indexOf(param1);\n" +    
+        "if(typeof $$$fongoEmits$$$[$$$key] === 'undefined') { " +
+        "   $$$fongoEmits$$$[$$$key] = new Array();" +
+        "}\n" +
+        "$$$fongoEmits$$$[$$$key][$$$fongoEmits$$$[$$$key].length] = param2;\n" +
         "};\n");
     // Prepare map function.
     sb.append("var fongoMapFunction = ").append(map).append(";\n");
     sb.append("var $$$fongoVars$$$ = new Object();\n");
     // For each object, execute in javascript the function.
+    
     for (DBObject object : objects) {
-      String json = JSON.serialize(object);
+      String json = CustomJSONSerializers.getJS().serialize(object);
       sb.append("$$$fongoVars$$$ = ").append(json).append(";\n");
       sb.append("$$$fongoVars$$$['fongoExecute'] = fongoMapFunction;\n");
       sb.append("$$$fongoVars$$$.fongoExecute();\n");
@@ -231,8 +255,9 @@ public class MapReduce {
     sb.setLength(0);
     sb.append("var reduce = ").append(reduce).append("\n");
     sb.append("var $$$fongoOuts$$$ = Array();\n" +
-        "for(i in $$$fongoEmits$$$) {\n" +
-        "$$$fongoOuts$$$[$$$fongoOuts$$$.length] = { _id : i, value : reduce(i, $$$fongoEmits$$$[i]) };\n" +
+        "for(var x=0; x<$$$ObjectReference$$$.length; x++) {\n" +
+        "   var $$$key = 'ObjectReference.' + x;\n" +    
+        "   $$$fongoOuts$$$[$$$fongoOuts$$$.length] = { _id : $$$ObjectReference$$$[x], value : reduce($$$ObjectReference$$$[x], $$$fongoEmits$$$[$$$key]) };\n" +
         "}\n");
     result.add(sb.toString());
 
