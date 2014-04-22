@@ -3,6 +3,7 @@ package com.github.fakemongo.impl.index;
 import com.github.fakemongo.impl.ExpressionParser;
 import com.github.fakemongo.impl.Filter;
 import com.github.fakemongo.impl.Util;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.FongoDBCollection;
 import com.mongodb.MongoException;
@@ -207,11 +208,18 @@ public abstract class IndexAbstract<T extends DBObject> {
     }
 
     lookupCount++;
-
+    
     // Filter for the key.
     Filter filterKey = expressionParser.buildFilter(query, getFields());
     // Filter for the data.
     Filter filter = expressionParser.buildFilter(query);
+    
+    // test for null or $exists query on indexes
+    DBObject nullObject = new BasicDBObject();
+    if(filter.apply(nullObject)){
+        return null;
+    }
+    
     List<T> result = new ArrayList<T>();
     for (Map.Entry<T, List<T>> entry : mapValues.entrySet()) {
       if (filterKey.apply(entry.getKey())) {
