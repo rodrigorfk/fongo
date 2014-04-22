@@ -198,7 +198,18 @@ public class UpdateEngine {
             subObject.put(subKey, asDbList(object));
           } else {
             BasicDBList currentValue = expressionParser.typecast(subKey, subObject.get(subKey), BasicDBList.class);
-            currentValue.add(object);
+            boolean add = false;
+            if(object instanceof DBObject){
+                DBObject objectDB = (DBObject) object;
+                if(objectDB.containsField("$each")){
+                    BasicDBList list = (BasicDBList) objectDB.get("$each");
+                    currentValue.addAll(list);
+                    add = true;
+                }
+            }
+            if(!add){
+                currentValue.add(object);
+            }
             subObject.put(subKey, currentValue);
           }
         }
