@@ -214,12 +214,6 @@ public abstract class IndexAbstract<T extends DBObject> {
     // Filter for the data.
     Filter filter = expressionParser.buildFilter(query);
     
-    // test for null or $exists query on indexes
-    DBObject nullObject = new BasicDBObject();
-    if(filter.apply(nullObject)){
-        return null;
-    }
-    
     List<T> result = new ArrayList<T>();
     for (Map.Entry<T, List<T>> entry : mapValues.entrySet()) {
       if (filterKey.apply(entry.getKey())) {

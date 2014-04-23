@@ -896,9 +896,10 @@ public class FongoDBCollection extends DBCollection {
     }
 
     DBObject idFirst = Util.cloneIdFirst(object);
+    List<String> ignoredIndexes = Arrays.asList("_id","_id_");
     Set<String> oldQueryFields = oldObject == null ? Collections.<String>emptySet() : oldObject.keySet();
     for (IndexAbstract index : indexes) {
-      if (index.canHandle(queryFields)) {
+      if (index.canHandle(queryFields) || !ignoredIndexes.containsAll(index.getFields())) {
         index.addOrUpdate(idFirst, oldObject);
       } else if (index.canHandle(oldQueryFields))
         // In case of update and removing a field, we must remove from the index.

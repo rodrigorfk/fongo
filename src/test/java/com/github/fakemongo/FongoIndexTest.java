@@ -466,7 +466,7 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("_id", 2));
 
     IndexAbstract index = getIndex(collection, "date_1");
-    assertEquals(0, index.size());
+    assertEquals(1, index.size());
 
     collection.update(new BasicDBObject("_id", 2), new BasicDBObject("date", 1));
     assertEquals(1, index.size());
@@ -486,7 +486,7 @@ public class FongoIndexTest {
     assertEquals(1, index.size());
 
     collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$unset", new BasicDBObject("date", 1)));
-    assertEquals(0, index.size());
+    assertEquals(1, index.size());
   }
 
   @Test
@@ -632,7 +632,7 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("_id", 2));
 
     IndexAbstract index = getIndex(collection, "a_1");
-    assertEquals(1, index.size());
+    assertEquals(2, index.size());
   }
 
   @Test
@@ -644,10 +644,10 @@ public class FongoIndexTest {
     collection.insert(new BasicDBObject("_id", 3).append("a", 1));
 
     IndexAbstract index = getIndex(collection, "a_1");
-    assertEquals(2, index.size());
+    assertEquals(3, index.size());
 
     collection.remove(new BasicDBObject("a", 1));
-    assertEquals(0, index.size());
+    assertEquals(1, index.size());
   }
 
   static IndexAbstract getIndex(DBCollection collection, String name) {
