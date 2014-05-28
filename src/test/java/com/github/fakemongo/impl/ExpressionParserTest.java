@@ -270,6 +270,19 @@ public class ExpressionParserTest {
         new BasicDBObject("a", asList(1, 4)),
         new BasicDBObject("a", 1)
     ), results);
+    
+    query = new BasicDBObjectBuilder().push("a").add("$nin", asList(2L, 3L)).pop().get();
+    results = doFilter(
+        query,
+        new BasicDBObject("a", asList(1, 4)),
+        new BasicDBObject("a", asList(1, 3)),
+        new BasicDBObject("a", 1),
+        new BasicDBObject("a", 3)
+    );
+    assertEquals(Arrays.<DBObject>asList(
+        new BasicDBObject("a", asList(1, 4)),
+        new BasicDBObject("a", 1)
+    ), results);
   }
 
   @Test

@@ -267,12 +267,18 @@ public class ExpressionParser {
     boolean compare(Object queryValueIgnored, Object storedValue, Set querySet) {
       if (storedValue instanceof List) {
         for (Object valueItem : (List) storedValue) {
-          if (querySet.contains(valueItem)) return direction;
+            if(valueItem instanceof Integer){
+                Integer storedValueInteger = (Integer) valueItem;
+                if(querySet.contains(storedValueInteger.longValue())) return direction;
+            }
+            if (querySet.contains(valueItem)) return direction;
         }
         return !direction;
-      } else {
-        return !(direction ^ querySet.contains(storedValue));
+      } else if(storedValue instanceof Integer){
+          Integer storedValueInteger = (Integer) storedValue;
+          if(querySet.contains(storedValueInteger.longValue())) return direction;
       }
+      return !(direction ^ querySet.contains(storedValue));
     }
   }
 

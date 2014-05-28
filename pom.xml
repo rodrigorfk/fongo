@@ -7,7 +7,7 @@
     </parent>
     <groupId>com.github.fakemongo</groupId>
     <artifactId>fongo</artifactId>
-    <version>1.4.0.2</version>
+    <version>1.4.0.3</version>
     <name>fongo</name>
     <description>Fake in-memory mongo</description>
     <url>https://github.com/fakemongo/fongo</url>
@@ -58,6 +58,8 @@
         <sonar.jacoco.reportPath>${jacoco.destFile.unit}</sonar.jacoco.reportPath>
         <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        
+        <nexus.home>http://hilux:8888/nexus/content</nexus.home>
     </properties>
 
     <dependencies>
@@ -367,6 +369,19 @@
         	</plugins>
         </pluginManagement>
     </build>
+
+    <distributionManagement>
+		<repository>
+			<id>pense-repository</id>
+			<name>pense-release-repo</name>
+			<url>${nexus.home}/repositories/pense-releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>pense-repository</id>
+			<name>pense-snapshot-repo</name>
+			<url>${nexus.home}/repositories/pense-snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 
     <profiles>
         <profile>
